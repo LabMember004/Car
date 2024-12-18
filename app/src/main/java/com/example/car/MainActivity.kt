@@ -125,7 +125,7 @@ class MainActivity : ComponentActivity() {
                         when (selectedIndex) {
                             0 -> {
                                 if (selectedCar == null) {
-                                    Filter()
+
                                     CarList(onCarClick = { car -> selectedCar = car } , searchQuery = searchQuery)
                                 } else {
                                     CarDetailsPage(car = selectedCar!!)
@@ -228,29 +228,7 @@ fun Headers(
 
 
 
-@Composable
-fun Filter() {
-    Row(
-        modifier = Modifier
-            .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
 
-
-    ) {
-        OutlinedButton(onClick = {}) {
-            Text("Filters")
-        }
-        OutlinedButton(onClick = {}) {
-            Text("Recommended")
-        }
-        OutlinedButton(onClick = {}) {
-            Text("Free Test Drive")
-        }
-        OutlinedButton(onClick = {}) {
-            Text("Alman w Zaman")
-        }
-    }
-}
 
 
 @Composable
@@ -328,6 +306,8 @@ fun Cars(car: Car, onCarClick: (Car) -> Unit) {
 }
 @Composable
 fun CarList(onCarClick: (Car) -> Unit, searchQuery: String) {
+    var showHighestRating by remember { mutableStateOf(false) }
+    var showAffordableCars by remember { mutableStateOf(false) }
     val cars = listOf(
         Car(R.drawable.jeep04, "Jeep Rubicon", "Jeep", "5.0", "20,000$"),
         Car(R.drawable.nissan01, "Nissan Altima", "Nissan", "4.8", "15,000$"),
@@ -336,9 +316,15 @@ fun CarList(onCarClick: (Car) -> Unit, searchQuery: String) {
         Car(R.drawable.kia01, "Kia Stinger", "Kia", "4.2", "27,000$")
     )
 
-    // Filter cars based on the search query
+    // Step 1: Apply search filter
     val filteredCars = cars.filter { car ->
         car.title.contains(searchQuery, ignoreCase = true)
+    }
+
+    // Step 2: Apply rating and price filters
+    val finalFilteredCars = filteredCars.filter { car ->
+        (!showHighestRating || car.rating.toFloat() >= 4.5f) &&  // High Rating: rating >= 4.5
+                (!showAffordableCars || car.price.replace(Regex("[^0-9]"), "").toFloat() < 15000)  // Affordable Cars: price < 15000
     }
 
     Column(
@@ -346,11 +332,32 @@ fun CarList(onCarClick: (Car) -> Unit, searchQuery: String) {
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
     ) {
-        filteredCars.forEach { car ->
-            Cars(car = car, onCarClick = onCarClick)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedButton(
+                onClick = { showHighestRating = !showHighestRating }
+            ) {
+                Text(if (showHighestRating) "High Rating: ON" else "High Rating: OFF")
+            }
+            OutlinedButton(
+                onClick = { showAffordableCars = !showAffordableCars }
+            ) {
+                Text(if (showAffordableCars) "Affordable Cars: ON" else "Affordable Cars: OFF")
+            }
         }
     }
+
+    // Step 3: Display the final filtered list
+    finalFilteredCars.forEach { car ->
+        Cars(car = car, onCarClick = onCarClick)
+    }
 }
+
+
 
 @Composable
 fun NavBar(
